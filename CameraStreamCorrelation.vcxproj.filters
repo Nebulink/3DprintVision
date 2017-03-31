@@ -10,38 +10,35 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="..\..\..\SharedContent\xaml\App.xaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\SharedContent\cpp\App.xaml.cpp" />
-    <ClCompile Include="..\..\..\SharedContent\cpp\MainPage.xaml.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="SampleConfiguration.cpp" />
     <ClCompile Include="Scenario1_CorrelateStreams.xaml.cpp" />
     <ClCompile Include="FrameRenderer.cpp" />
     <ClCompile Include="Scenario2_GetRawData.xaml.cpp" />
+    <ClCompile Include="App.xaml.cpp" />
+    <ClCompile Include="MainPage.xaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="..\..\..\SharedContent\cpp\App.xaml.h" />
-    <ClInclude Include="..\..\..\SharedContent\cpp\MainPage.xaml.h" />
     <ClInclude Include="SampleConfiguration.h" />
     <ClInclude Include="FrameRenderer.h" />
     <ClInclude Include="SimpleLogger.h" />
     <ClInclude Include="Scenario1_CorrelateStreams.xaml.h" />
     <ClInclude Include="Scenario2_GetRawData.xaml.h" />
     <ClInclude Include="LookupTable.h" />
+    <ClInclude Include="App.xaml.h" />
+    <ClInclude Include="MainPage.xaml.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="..\..\..\SharedContent\cpp\MainPage.xaml" />
-    <Page Include="..\..\..\SharedContent\xaml\Styles.xaml">
-      <Filter>Styles</Filter>
-    </Page>
     <Page Include="Scenario1_CorrelateStreams.xaml" />
     <Page Include="Scenario2_GetRawData.xaml" />
+    <Page Include="Styles.xaml">
+      <Filter>Styles</Filter>
+    </Page>
+    <Page Include="MainPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\SharedContent\media\smalltile-sdk.png">
@@ -140,5 +137,8 @@
     <Image Include="Assets\splash-sdk.scale-400.png">
       <Filter>Assets</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
   </ItemGroup>
 </Project>

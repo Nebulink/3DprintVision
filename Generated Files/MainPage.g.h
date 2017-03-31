@@ -17,6 +17,7 @@ namespace Windows {
                 ref class TextBlock;
                 ref class FontIcon;
                 ref class ListBox;
+                ref class HyperlinkButton;
                 ref class Frame;
                 ref class Border;
             }
@@ -47,7 +48,9 @@ namespace SDKTemplate
         private: ::Windows::UI::Xaml::Controls::TextBlock^ SampleTitle;
         private: ::Windows::UI::Xaml::Controls::ListBox^ ScenarioControl;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ FooterPanel;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ Copyright;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ LinksPanel;
+        private: ::Windows::UI::Xaml::Controls::HyperlinkButton^ PrivacyLink;
         private: ::Windows::UI::Xaml::Controls::Frame^ ScenarioFrame;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ StatusPanel;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ StatusLabel;

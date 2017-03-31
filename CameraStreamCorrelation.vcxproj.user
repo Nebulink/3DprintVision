@@ -4,6 +4,6 @@
     <PackageLogoSource>D:\Google Drive\Nebulink Shared\Development\Assets\Logos\Nebulink_lightBG.png</PackageLogoSource>
     <AppIconSource>D:\Google Drive\Nebulink Shared\Development\Assets\Logos\Nebulink_lightBG.png</AppIconSource>
     <SplashScreenSource>D:\Google Drive\Nebulink Shared\Development\Assets\Logos\Nebulink_lightBG.png</SplashScreenSource>
-    <ShowAllFiles>false</ShowAllFiles>
+    <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
 </Project>

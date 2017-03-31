@@ -203,27 +203,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\SharedContent\media\microsoft-sdk.png">
-      <Link>Assets\microsoft-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\smalltile-sdk.png">
-      <Link>Assets\smalltile-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\splash-sdk.png">
-      <Link>Assets\splash-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\squaretile-sdk.png">
-      <Link>Assets\squaretile-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\storelogo-sdk.png">
-      <Link>Assets\storelogo-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\tile-sdk.png">
-      <Link>Assets\tile-sdk.png</Link>
-    </Image>
-    <Image Include="..\..\..\SharedContent\media\windows-sdk.png">
-      <Link>Assets\windows-sdk.png</Link>
-    </Image>
     <Image Include="Assets\smallTile-sdk.altform-unplated_targetsize-16.png" />
     <Image Include="Assets\smallTile-sdk.altform-unplated_targetsize-24.png" />
     <Image Include="Assets\smallTile-sdk.altform-unplated_targetsize-256.png" />

@@ -45,6 +45,8 @@ namespace SDKTemplate
             Windows::Media::Capture::Frames::MediaFrameReference^ colorFrame,
             Windows::Media::Capture::Frames::MediaFrameReference^ depthFrame);
 
+		void ProcessDepthArray();
+
     private: // private methods
 		/// <summary>
 		/// Transforms pixels of inputBitmap to an output bitmap using the supplied pixel transformation method.

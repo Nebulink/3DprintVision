@@ -17,6 +17,12 @@ using namespace Windows::Media::Capture;
 using namespace Windows::Media::Capture::Frames;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Xaml::Media::Imaging;
+using namespace Windows::UI::Xaml::Controls;
+using namespace Windows::UI::Xaml;
+
+Image^ bufferImageArray[10];
+
+StackPanel^ bufferStack[10];
 
 // Used to determine whether a source has a Perception major type.
 static String^ PerceptionMediaType = L"Perception";
@@ -48,12 +54,26 @@ Scenario2_GetRawData::Scenario2_GetRawData() : rootPage(MainPage::Current)
 	m_singleInfraredFrameRenderer = std::make_unique<FrameRenderer>(infraredFrameImage);
 
 	m_depthFilterFrameRenderer = std::make_unique<FrameRenderer>(depthFilterImage);
+
+	for (int i = 0; i < bufferSize; i++)
+	{
+		bufferImageArray[i] = ref new Image();
+		bufferStack[i] = ref new StackPanel();
+
+		bufferStack[i]->Margin = Thickness(0, 520*i, 0, 0);
+
+		bufferStack[i]->Children->Append(bufferImageArray[i]);
+
+		myGrid->Children->Append(bufferStack[i]);
+		m_depthImageArray[i] = std::make_unique<FrameRenderer>(bufferImageArray[i]);
+	}
 }
 
 void Scenario2_GetRawData::OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e)
 {
 	// Start streaming from the first available source group.
 	PickNextMediaSourceAsync();
+
 }
 
 void Scenario2_GetRawData::OnNavigatedFrom(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e)
@@ -69,6 +89,8 @@ void Scenario2_GetRawData::NextButton_Click(Platform::Object^ sender, Windows::U
 void Scenario2_GetRawData::captureButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	captureButtonPressed = 1;
+	bufferingFrame = 1;
+	bufferingFrameCounter = bufferSize;
 }
 
 task<void> Scenario2_GetRawData::PickNextMediaSourceAsync()
@@ -297,6 +319,7 @@ task<void> Scenario2_GetRawData::CleanupMediaCaptureAsync()
 	return cleanupTask;
 }
 
+
 void Scenario2_GetRawData::FrameReader_FrameArrived(MediaFrameReader^ sender, MediaFrameArrivedEventArgs^ args)
 {
 	// TryAcquireLatestFrame will return the latest frame that has not yet been acquired.
@@ -363,7 +386,40 @@ void Scenario2_GetRawData::FrameReader_FrameArrived(MediaFrameReader^ sender, Me
 					m_depthFilterFrameRenderer->ProcessDepthAndColorFrames(colorFrame, depthFrame);
 				}
 
+
 				captureButtonPressed = 0;
+			}
+
+			if (bufferingFrame)
+			{
+
+
+				m_logger->Log("Buffer Frame Counter" + bufferingFrameCounter);
+
+				m_depthImageArray[abs(bufferingFrameCounter - bufferSize)]->ProcessDepthAndColorFrames(colorFrame, depthFrame);
+
+				bufferingFrameCounter--;
+
+				if (bufferingFrameCounter == 0)
+				{
+					bufferingFrameCounter = 10;
+					m_logger->Log("Finished Buffer Frame Counter");
+					bufferingFrame = 0;
+				}
+
+
+				//bufferImageArray[bufferingFrameCounter] = ref new TextBlock();
+
+
+				//bufferImageArray[bufferingFrameCounter]->Text = "=============================================================" + bufferingFrameCounter;
+
+				//bufferStack[bufferingFrameCounter]->Children->Append(bufferImageArray[bufferingFrameCounter]);
+
+				//myGrid->Children->Append(bufferStack[bufferingFrameCounter]);
+
+				//myGrid->Children->Append(bufferImageArray[bufferingFrameCounter]);
+
+				//myGrid->Children->Append( );
 			}
 
 			// clear buffered frames if used

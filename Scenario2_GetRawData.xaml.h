@@ -44,6 +44,8 @@ namespace SDKTemplate
 		void NextButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void captureButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 
+		void DisplayImage();
+
 	private: // Private methods
 			 /// <summary>
 			 /// Enable and disable the stream toggle buttons and set their output message if they are disabled.
@@ -86,7 +88,12 @@ namespace SDKTemplate
 			Windows::Media::Capture::Frames::MediaFrameArrivedEventArgs^ args);
 
 	private: // Private data.
+
+		const UINT16 bufferSize = 10;
+
 		UINT16 captureButtonPressed = 0;
+		UINT16 bufferingFrame = 0;
+		UINT16 bufferingFrameCounter = bufferSize;
 
 		SDKTemplate::MainPage^ rootPage;
 
@@ -107,6 +114,7 @@ namespace SDKTemplate
 		std::unique_ptr<FrameRenderer> m_singleInfraredFrameRenderer;
 
 		std::unique_ptr<FrameRenderer> m_depthFilterFrameRenderer;
+		std::unique_ptr<FrameRenderer> m_depthImageArray[10];
 
 		SDKTemplate::SimpleLogger^ m_logger;
 	};

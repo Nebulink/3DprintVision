@@ -20,9 +20,12 @@ using namespace Windows::UI::Xaml::Media::Imaging;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml;
 
-Image^ bufferImageArray[10];
+Image^ bufferImageArray[11];
+TextBlock^ bufferTitle[11];
 
-StackPanel^ bufferStack[10];
+StackPanel^ bufferStack[11];
+
+Grid^ bufferGrid[4];
 
 // Used to determine whether a source has a Perception major type.
 static String^ PerceptionMediaType = L"Perception";
@@ -55,18 +58,77 @@ Scenario2_GetRawData::Scenario2_GetRawData() : rootPage(MainPage::Current)
 
 	m_depthFilterFrameRenderer = std::make_unique<FrameRenderer>(depthFilterImage);
 
+	int gridIndex = 0;
+	int stackIndex = 0;
+
+	for (int i = 0; i < 4; i++) 
+	{
+		bufferGrid[i] = ref new Grid();
+	}
+
 	for (int i = 0; i < bufferSize; i++)
 	{
 		bufferImageArray[i] = ref new Image();
+		bufferTitle[i] = ref new TextBlock();
 		bufferStack[i] = ref new StackPanel();
 
-		bufferStack[i]->Margin = Thickness(0, 520*i, 0, 0);
+		if (i == 0) {
+			setBufferGrid(gridIndex);
+		}
+
+		if ((i % 3 == 0) && (i != 0))
+		{
+			gridIndex++;
+			stackIndex = 0;
+			setBufferGrid(gridIndex);
+		}
+
+		bufferTitle[i]->Text = "This is image " + i;
+		bufferStack[i]->Children->Append(bufferTitle[i]);
+
+		bufferStack[i]->SetValue(Windows::UI::Xaml::Controls::Grid::ColumnProperty, stackIndex);
+		stackIndex++;
 
 		bufferStack[i]->Children->Append(bufferImageArray[i]);
 
-		myGrid->Children->Append(bufferStack[i]);
+		bufferGrid[gridIndex]->Children->Append(bufferStack[i]);
+
 		m_depthImageArray[i] = std::make_unique<FrameRenderer>(bufferImageArray[i]);
 	}
+	
+	bufferImageArray[10] = ref new Image();
+	bufferTitle[10] = ref new TextBlock();
+	bufferStack[10] = ref new StackPanel();
+
+	bufferTitle[10]->Text = "This is Average";
+	bufferStack[10]->Children->Append(bufferTitle[10]);
+
+	bufferStack[10]->SetValue(Windows::UI::Xaml::Controls::Grid::ColumnProperty, 1);
+
+	bufferStack[10]->Children->Append(bufferImageArray[10]);
+
+	bufferGrid[3]->Children->Append(bufferStack[10]);
+
+	m_depthImageArray[10] = std::make_unique<FrameRenderer>(bufferImageArray[10]);
+}
+
+void SDKTemplate::Scenario2_GetRawData::setBufferGrid(int gridIndex)
+{
+	bufferGrid[gridIndex]->BorderThickness = Thickness(1);
+	ColumnDefinition^ col1 = ref new ColumnDefinition;
+	ColumnDefinition^ col2 = ref new ColumnDefinition;
+	ColumnDefinition^ col3 = ref new ColumnDefinition;
+
+	col1->Width = GridLength(1, GridUnitType::Star);
+	col2->Width = GridLength(1, GridUnitType::Star);
+	col3->Width = GridLength(1, GridUnitType::Star);
+
+	bufferGrid[gridIndex]->ColumnDefinitions->Append(col1);
+	bufferGrid[gridIndex]->ColumnDefinitions->Append(col2);
+	bufferGrid[gridIndex]->ColumnDefinitions->Append(col3);
+
+	bufferGrid[gridIndex]->SetValue(Windows::UI::Xaml::Controls::Grid::RowProperty, gridIndex);
+	myGrid->Children->Append(bufferGrid[gridIndex]);
 }
 
 void Scenario2_GetRawData::OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e)
@@ -386,14 +448,11 @@ void Scenario2_GetRawData::FrameReader_FrameArrived(MediaFrameReader^ sender, Me
 					m_depthFilterFrameRenderer->ProcessDepthAndColorFrames(colorFrame, depthFrame);
 				}
 
-
 				captureButtonPressed = 0;
 			}
 
 			if (bufferingFrame)
 			{
-
-
 				m_logger->Log("Buffer Frame Counter" + bufferingFrameCounter);
 
 				m_depthImageArray[abs(bufferingFrameCounter - bufferSize)]->ProcessDepthAndColorFrames(colorFrame, depthFrame);
@@ -402,24 +461,43 @@ void Scenario2_GetRawData::FrameReader_FrameArrived(MediaFrameReader^ sender, Me
 
 				if (bufferingFrameCounter == 0)
 				{
+
+					SoftwareBitmap^ inputBitmap = colorFrame->VideoMediaFrame->SoftwareBitmap;
+					SoftwareBitmap^ outputBitmap;
+					
+					// Copy the color input bitmap so we may overlay the depth bitmap on top of it.
+					if ((inputBitmap->BitmapPixelFormat == BitmapPixelFormat::Bgra8) &&
+						(inputBitmap->BitmapAlphaMode == BitmapAlphaMode::Premultiplied))
+					{
+						outputBitmap = SoftwareBitmap::Copy(inputBitmap);
+					}
+					else
+					{
+						outputBitmap = SoftwareBitmap::Convert(inputBitmap, BitmapPixelFormat::Bgra8, BitmapAlphaMode::Premultiplied);
+					}
+
+					BitmapBuffer^ depthBuffer = depthFrame->VideoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
+					BitmapBuffer^ colorBuffer = colorFrame->VideoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
+					BitmapBuffer^ outputBuffer = outputBitmap->LockBuffer(BitmapBufferAccessMode::Write);
+
+
+					BitmapPlaneDescription colorDesc = colorBuffer->GetPlaneDescription(0);
+					UINT32 colorWidth = static_cast<UINT32>(colorDesc.Width);
+					UINT32 colorHeight = static_cast<UINT32>(colorDesc.Height);
+
+					//SoftwareBitmap^ softwareBitmap = MapDepthToColor(
+					//	colorFrame->VideoMediaFrame,
+					//	depthFrame->VideoMediaFrame,
+					//	colorFrame->VideoMediaFrame->CameraIntrinsics,
+					//	colorFrame->CoordinateSystem,
+					//	coordinateMapper);
+
+					m_depthImageArray[10]->ProcessDepthAndColorFrames(colorFrame, depthFrame);
+
 					bufferingFrameCounter = 10;
 					m_logger->Log("Finished Buffer Frame Counter");
 					bufferingFrame = 0;
 				}
-
-
-				//bufferImageArray[bufferingFrameCounter] = ref new TextBlock();
-
-
-				//bufferImageArray[bufferingFrameCounter]->Text = "=============================================================" + bufferingFrameCounter;
-
-				//bufferStack[bufferingFrameCounter]->Children->Append(bufferImageArray[bufferingFrameCounter]);
-
-				//myGrid->Children->Append(bufferStack[bufferingFrameCounter]);
-
-				//myGrid->Children->Append(bufferImageArray[bufferingFrameCounter]);
-
-				//myGrid->Children->Append( );
 			}
 
 			// clear buffered frames if used

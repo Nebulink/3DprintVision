@@ -47,14 +47,6 @@
                 </StackPanel>
             </StackPanel>
 
-            <Grid x:Name="myGrid" HorizontalAlignment="Stretch" Margin="0,10,0,0">
-                <StackPanel Margin="0,10,0,0">
-                    <TextBlock Style="{StaticResource ScenarioDescriptionTextStyle}" TextWrapping="Wrap">
-                        List of shit
-                    </TextBlock>
-                </StackPanel>
-            </Grid>
-
             <Grid HorizontalAlignment="Stretch" Margin="0,10,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -143,7 +135,31 @@
                         <Image Name="depthFilterImage"/>
                     </StackPanel>
                 </Grid>
+            </Grid>
 
+            <Grid x:Name="myGrid" HorizontalAlignment="Stretch" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition x:Name="WideColumn5" Width="Auto"/>
+                    <ColumnDefinition x:Name="WideColumn6" Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <Grid.Resources>
+                    <Style TargetType="Grid">
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="BorderBrush" Value="LightGray"/>
+                    </Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                    </Style>
+                </Grid.Resources>
             </Grid>
 
             <TextBlock x:Name="outputTextBlock" TextWrapping="Wrap" Margin="0,10,0,0"/>

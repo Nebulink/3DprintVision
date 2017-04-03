@@ -27,6 +27,8 @@ namespace SDKTemplate
 	public:
 		Scenario2_GetRawData();
 
+		void setBufferGrid(int gridIndex);
+
 	protected:
 		/// <summary>
 		/// Called when user navigates to this Scenario.
@@ -114,7 +116,7 @@ namespace SDKTemplate
 		std::unique_ptr<FrameRenderer> m_singleInfraredFrameRenderer;
 
 		std::unique_ptr<FrameRenderer> m_depthFilterFrameRenderer;
-		std::unique_ptr<FrameRenderer> m_depthImageArray[10];
+		std::unique_ptr<FrameRenderer> m_depthImageArray[11];
 
 		SDKTemplate::SimpleLogger^ m_logger;
 	};

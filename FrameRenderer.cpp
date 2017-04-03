@@ -530,8 +530,8 @@ SoftwareBitmap^ FrameRenderer::MapDepthToColor(
 
 //        constexpr float depthFadeStart = 1;
   //      constexpr float depthFadeEnd = 1.5;
-		constexpr float depthFadeStart = 0.84;
-		constexpr float depthFadeEnd = 0.85;
+		constexpr float depthFadeStart = 0.4;
+		constexpr float depthFadeEnd = 4;
 
         // Using the depth values we fade the color pixels of the ouput if they are too far away.
         for (UINT y = 0; y < colorHeight; y++)

@@ -119,5 +119,15 @@ namespace SDKTemplate
 		std::unique_ptr<FrameRenderer> m_depthImageArray[11];
 
 		SDKTemplate::SimpleLogger^ m_logger;
+
+		Platform::Array<Windows::Foundation::Point>^ m_colorSpacePoints;
+		Platform::Array<Windows::Foundation::Numerics::float3>^ m_depthSpacePoints;
+		Platform::Array<Windows::Foundation::Point>^ m_inDepthSpacePoints;
+
+		UINT32 m_previousBufferWidth = 0;
+		UINT32 m_previousBufferHeight = 0;
+
+		private: // private synchronization
+			std::mutex m_pointBufferMutex;
 	};
 }

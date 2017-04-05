@@ -2,6 +2,8 @@
 #include <windowsnumerics.h>
 #include "Scenario2_GetRawData.xaml.h"
 #include "FrameRenderer.h"
+#include <MemoryBuffer.h>
+#include <cmath>
 
 using namespace SDKTemplate;
 
@@ -13,12 +15,39 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::Imaging;
+using namespace Windows::Media::Capture::Frames;
+using namespace Windows::Media::Devices::Core;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Media::Capture;
 using namespace Windows::Media::Capture::Frames;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Xaml::Media::Imaging;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml;
+
+#pragma region Low-level operations on reference pointers
+
+// Convert a reference pointer to a specific ComPtr.
+template<typename T>
+Microsoft::WRL::ComPtr<T> AsComPtr(Platform::Object^ object)
+{
+	Microsoft::WRL::ComPtr<T> p;
+	reinterpret_cast<IUnknown*>(object)->QueryInterface(IID_PPV_ARGS(&p));
+	return p;
+}
+
+#pragma endregion
+
+// Structure used to access colors stored in 8-bit BGRA format.
+struct ColorBGRA
+{
+	byte B, G, R, A;
+};
+
+struct depthDR
+{
+	float D, R;
+};
 
 Image^ bufferImageArray[11];
 TextBlock^ bufferTitle[11];
@@ -454,45 +483,107 @@ void Scenario2_GetRawData::FrameReader_FrameArrived(MediaFrameReader^ sender, Me
 			if (bufferingFrame)
 			{
 				m_logger->Log("Buffer Frame Counter" + bufferingFrameCounter);
-
-				m_depthImageArray[abs(bufferingFrameCounter - bufferSize)]->ProcessDepthAndColorFrames(colorFrame, depthFrame);
+				
+				m_depthImageArray[abs(bufferingFrameCounter - bufferSize)]->ProcessDepthFrame(depthFrame);
 
 				bufferingFrameCounter--;
 
 				if (bufferingFrameCounter == 0)
 				{
+					//Set up buffers
+					SoftwareBitmap^ depthInputBitmap = depthFrame->VideoMediaFrame->SoftwareBitmap;
+					auto mode = depthInputBitmap->BitmapAlphaMode;
+					SoftwareBitmap^ depthOutputBitmap;
 
-					SoftwareBitmap^ inputBitmap = colorFrame->VideoMediaFrame->SoftwareBitmap;
-					SoftwareBitmap^ outputBitmap;
-					
 					// Copy the color input bitmap so we may overlay the depth bitmap on top of it.
-					if ((inputBitmap->BitmapPixelFormat == BitmapPixelFormat::Bgra8) &&
-						(inputBitmap->BitmapAlphaMode == BitmapAlphaMode::Premultiplied))
+					if (depthInputBitmap->BitmapPixelFormat == BitmapPixelFormat::Gray16)
 					{
-						outputBitmap = SoftwareBitmap::Copy(inputBitmap);
+						depthOutputBitmap = SoftwareBitmap::Copy(depthInputBitmap);
 					}
 					else
 					{
-						outputBitmap = SoftwareBitmap::Convert(inputBitmap, BitmapPixelFormat::Bgra8, BitmapAlphaMode::Premultiplied);
+						depthOutputBitmap = SoftwareBitmap::Convert(depthInputBitmap, BitmapPixelFormat::Gray16);
 					}
-
+					
+					BitmapBuffer^ depthOutputBuffer = depthOutputBitmap->LockBuffer(BitmapBufferAccessMode::Read);
 					BitmapBuffer^ depthBuffer = depthFrame->VideoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
-					BitmapBuffer^ colorBuffer = colorFrame->VideoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
-					BitmapBuffer^ outputBuffer = outputBitmap->LockBuffer(BitmapBufferAccessMode::Write);
+					if (depthBuffer != nullptr || depthOutputBuffer != nullptr)
+					{
+						BitmapPlaneDescription depthDesc = depthBuffer->GetPlaneDescription(0);
+						UINT32 depthWidth = static_cast<UINT32>(depthDesc.Width);
+						UINT32 depthHeight = static_cast<UINT32>(depthDesc.Height);
 
+						IMemoryBufferReference^ depthReference = depthBuffer->CreateReference();
+						IMemoryBufferReference^ depthOutputReference = depthOutputBuffer->CreateReference();
 
-					BitmapPlaneDescription colorDesc = colorBuffer->GetPlaneDescription(0);
-					UINT32 colorWidth = static_cast<UINT32>(colorDesc.Width);
-					UINT32 colorHeight = static_cast<UINT32>(colorDesc.Height);
+						byte* depthBytes = nullptr;
+						UINT32 depthCapacity;
+						byte* depthOutputBytes = nullptr;
+						UINT32 depthOutputCapacity;
 
-					//SoftwareBitmap^ softwareBitmap = MapDepthToColor(
-					//	colorFrame->VideoMediaFrame,
-					//	depthFrame->VideoMediaFrame,
-					//	colorFrame->VideoMediaFrame->CameraIntrinsics,
-					//	colorFrame->CoordinateSystem,
-					//	coordinateMapper);
+						AsComPtr<IMemoryBufferByteAccess>(depthReference)->GetBuffer(&depthBytes, &depthCapacity);
+						AsComPtr<IMemoryBufferByteAccess>(depthOutputReference)->GetBuffer(&depthOutputBytes, &depthOutputCapacity);
+						if (depthBytes != nullptr || depthOutputBytes != nullptr)
+						{
 
-					m_depthImageArray[10]->ProcessDepthAndColorFrames(colorFrame, depthFrame);
+							// Ensure synchronous read/write access to point buffer cache.
+							std::lock_guard<std::mutex> guard(m_pointBufferMutex);
+							UINT16* inputRow = reinterpret_cast<UINT16*>(depthBytes);
+							
+							//define depthspace points as floating array of the size of the depth frame
+							Array<Point>^ inDepthSpacePoints = m_inDepthSpacePoints;
+							if (inDepthSpacePoints == nullptr ||
+								m_previousBufferWidth != depthWidth ||
+								m_previousBufferHeight != depthHeight)
+							{
+								inDepthSpacePoints = ref new Array<Point>(depthWidth * depthHeight);
+								// Prepare array of points we want mapped.
+								for (UINT y = 0; y < depthHeight; y++)
+								{
+									for (UINT x = 0; x < depthWidth; x++)
+									{
+										inDepthSpacePoints[y * depthWidth + x] = Point(static_cast<float>(x), static_cast<float>(y));
+									}
+								}
+							}
+							//Save the (possibly updated) values now that they are all known to be good.
+							m_inDepthSpacePoints = inDepthSpacePoints;
+
+							Array<float3>^ depthSpacePoints = m_depthSpacePoints;
+							if (depthSpacePoints == nullptr ||
+								m_previousBufferWidth != depthWidth ||
+								m_previousBufferHeight != depthHeight)
+							{
+								depthSpacePoints = ref new Array<float3>(depthWidth * depthHeight);
+							}
+							//Save the (possibly updated) values now that they are all known to be good.
+							m_depthSpacePoints = depthSpacePoints;
+							
+							////return vector with x, y, z data.
+							//double depthScale = depthFrame->VideoMediaFrame->DepthMediaFrame->DepthFormat->DepthScaleInMeters;
+							//for (int y = 0; y < depthHeight; y++)
+							//{
+							//	for (int x = 0; x < depthWidth; x++)
+							//	{
+							//		UINT index = y * depthWidth + x;
+							//		float depth = static_cast<float>(inputRow[index]) * static_cast<float>(depthScale);
+
+							//		m_depthSpacePoints[index].x = x;
+							//		m_depthSpacePoints[index].y = y;
+							//		if (depth / 2 <= 0)
+							//		{
+							//			m_depthSpacePoints[index].z = 0;
+							//		}
+							//		else
+							//		{
+							//			m_depthSpacePoints[index].z = depth;
+							//		}
+							//	}
+							//}
+							
+							m_depthImageArray[10]->ProcessDepthPixels(depthOutputBitmap, depthFrame);
+						}
+					}
 
 					bufferingFrameCounter = 10;
 					m_logger->Log("Finished Buffer Frame Counter");

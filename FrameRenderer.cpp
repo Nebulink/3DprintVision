@@ -59,6 +59,11 @@ struct ColorBGRA
 	byte B, G, R, A;
 };
 
+struct depthDR
+{
+	uint16 D, R;
+};
+
 // Colors to map values to based on intensity.
 static constexpr std::array<ColorBGRA, 9> colorRamp = {
 	ColorBGRA{ 0xFF, 0x7F, 0x00, 0x00 },
@@ -270,6 +275,36 @@ void FrameRenderer::ProcessDepthFrame(MediaFrameReference^ depthFrame)
 		OutputDebugStringW(L"Depth format in unexpected format.\r\n");
 	}
 	
+	//Send to UI
+	if (outputBitmap != nullptr)
+	{
+		BufferBitmapForRendering(SoftwareBitmap::Copy(outputBitmap));
+	}
+}
+
+void FrameRenderer::ProcessDepthPixels(SoftwareBitmap^ inputBitmap, MediaFrameReference^ depthFrame)
+{
+	SoftwareBitmap^ outputBitmap;
+	auto mode = inputBitmap->BitmapAlphaMode;
+
+	// We requested D16 from the MediaFrameReader, so the frame should
+	// be in Gray16 format.
+	if (inputBitmap->BitmapPixelFormat == BitmapPixelFormat::Gray16)
+	{
+		using namespace std::placeholders;
+
+		// Use a special pseudo color to render 16 bits depth frame.
+		// Since we must scale the output appropriately we use std::bind to
+		// create a function that takes the depth scale as input but also matches
+		// the required signature.
+		double depthScale = depthFrame->VideoMediaFrame->DepthMediaFrame->DepthFormat->DepthScaleInMeters;
+		outputBitmap = TransformBitmap(inputBitmap, std::bind(&PseudoColorForDepth, _1, _2, _3, static_cast<float>(depthScale)));
+	}
+	else
+	{
+		OutputDebugStringW(L"Depth format in unexpected format.\r\n");
+	}
+
 	//Send to UI
 	if (outputBitmap != nullptr)
 	{
@@ -549,6 +584,7 @@ SoftwareBitmap^ FrameRenderer::MapDepthToColor(
                 outputPixels[index].G = static_cast<byte>(static_cast<float>(outputPixels[index].G) * fadeValue);
                 outputPixels[index].B = static_cast<byte>(static_cast<float>(outputPixels[index].B) * fadeValue);
             }
+			//Do ntohing
         }
     }
 

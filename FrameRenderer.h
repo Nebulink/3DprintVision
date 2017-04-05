@@ -32,6 +32,7 @@ namespace SDKTemplate
 		/// Buffer and render depth frame.
 		/// </summary>
 		void ProcessDepthFrame(Windows::Media::Capture::Frames::MediaFrameReference^ depthFrame);
+		void ProcessDepthPixels(Windows::Graphics::Imaging::SoftwareBitmap^ inputBitmap, Windows::Media::Capture::Frames::MediaFrameReference^ depthFrame);
 
 		/// <summary>
 		/// Buffer and render infrared frame.
